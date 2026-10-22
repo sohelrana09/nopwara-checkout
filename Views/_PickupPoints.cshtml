@@ -1,0 +1,53 @@
+@model CheckoutPickupPointsModel
+@*
+    Pickup points (same form key and value as core: pickup-points-id = "{id}___{providerSystemName}").
+    A change is saved by the page's delegated change handler (selectshipping with PickupInStore=true).
+*@
+<template x-if="errors['shipping-methods']">
+    <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors['shipping-methods']"><li x-text="message"></li></template></ul>
+</template>
+@if (Model.Warnings.Any())
+{
+    <ul class="message-error mb-4 space-y-0.5">
+        @foreach (var warning in Model.Warnings)
+        {
+            <li>@warning</li>
+        }
+    </ul>
+}
+@if (Model.PickupPoints.Any())
+{
+    var selected = Model.PickupPoints.FirstOrDefault(point => point.IsPreSelected);
+    <ul class="pickup-points method-list" data-pickup-points>
+        @for (var i = 0; i < Model.PickupPoints.Count; i++)
+        {
+            var point = Model.PickupPoints[i];
+            var address = string.Join(", ", new[] { point.Address, point.City, point.StateName, point.ZipPostalCode, point.CountryName }.Where(part => !string.IsNullOrWhiteSpace(part)));
+            <li>
+                <label for="pickup-point-@(i)" class="flex cursor-pointer items-start gap-3">
+                    <input id="pickup-point-@(i)" type="radio" name="@NopwaraCheckoutDefaults.PICKUP_POINT_FIELD" class="mt-0.5"
+                           value="@(point.Id)@(NopwaraCheckoutDefaults.OPTION_SEPARATOR)@(point.ProviderSystemName)"
+                           checked="@(point == selected)" />
+                    <span class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-baseline justify-between gap-x-3">
+                            <span class="font-medium text-slate-900">@(string.IsNullOrEmpty(point.Name) ? T("Checkout.PickupPoints.NullName") : point.Name)</span>
+                            <span class="font-semibold text-slate-900">@point.PickupFee</span>
+                        </span>
+                        @if (!string.IsNullOrEmpty(address))
+                        {
+                            <span class="mt-0.5 block text-xs text-slate-600">@address</span>
+                        }
+                        @if (!string.IsNullOrEmpty(point.Description))
+                        {
+                            <span class="mt-0.5 block text-xs text-slate-500">@Html.Raw(point.Description)</span>
+                        }
+                        @if (!string.IsNullOrEmpty(point.OpeningHours))
+                        {
+                            <span class="mt-1 block text-xs text-slate-500"><span class="font-medium text-slate-600">@T("Plugins.Misc.NopwaraCheckout.PickupPoints.OpeningHours"):</span> @Html.Raw(point.OpeningHours)</span>
+                        }
+                    </span>
+                </label>
+            </li>
+        }
+    </ul>
+}

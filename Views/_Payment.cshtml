@@ -1,0 +1,80 @@
+@model NopwaraPaymentSectionModel
+@*
+    Payment section: payment methods + the selected method's payment form (re-rendered by ajax).
+    The payment form is rendered by the payment plugin's public view component; its inputs are posted with
+    the whole page form on "Place order" (validated by IPaymentMethod.ValidatePaymentFormAsync).
+*@
+@if (!Model.PaymentRequired)
+{
+    <p class="rounded-md bg-emerald-50 px-3 py-3 text-sm text-emerald-800">@T("Plugins.Misc.NopwaraCheckout.PaymentNotRequired")</p>
+}
+else if (Model.PaymentMethods == null)
+{
+    <p class="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500">
+        <svg class="size-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg>
+        @T("Plugins.Misc.NopwaraCheckout.PaymentMethods.EnterAddress")
+    </p>
+}
+else
+{
+    var methods = Model.PaymentMethods;
+    <div class="section payment-method space-y-3">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutPaymentMethodTop, additionalData = methods })
+        @if (methods.DisplayRewardPoints && methods.PaymentMethods.Count > 0)
+        {
+            <div class="use-reward-points">
+                <input type="checkbox" id="UseRewardPoints" name="UseRewardPoints" value="true" checked="@methods.UseRewardPoints" />
+                <label for="UseRewardPoints">@string.Format(T("Checkout.UseRewardPoints").Text, methods.RewardPointsToUse, methods.RewardPointsBalance, methods.RewardPointsToUseAmount)</label>
+            </div>
+        }
+        @if (methods.PaymentMethods.Count > 0)
+        {
+            <ul class="method-list" id="payment-method-block">
+                @for (var i = 0; i < methods.PaymentMethods.Count; i++)
+                {
+                    var paymentMethod = methods.PaymentMethods[i];
+                    var isSelected = paymentMethod.Selected;
+                    <li>
+                        <label for="paymentmethod_@(i)" class="flex cursor-pointer items-center gap-3">
+                            <input id="paymentmethod_@(i)" type="radio" name="paymentmethod" value="@(paymentMethod.PaymentMethodSystemName)" checked="@isSelected" />
+                            <span class="min-w-0 flex-1">
+                                <span class="flex flex-wrap items-baseline justify-between gap-x-3">
+                                    <span class="font-medium text-slate-900">@paymentMethod.Name</span>
+                                    @if (!string.IsNullOrEmpty(paymentMethod.Fee))
+                                    {
+                                        <span class="text-xs text-slate-500">+ @paymentMethod.Fee</span>
+                                    }
+                                </span>
+                                @if (!string.IsNullOrEmpty(paymentMethod.Description))
+                                {
+                                    <span class="mt-0.5 block text-xs text-slate-500">@paymentMethod.Description</span>
+                                }
+                            </span>
+                            @if (!string.IsNullOrEmpty(paymentMethod.LogoUrl))
+                            {
+                                <img src="@paymentMethod.LogoUrl" alt="@paymentMethod.Name" class="h-7 w-auto shrink-0" />
+                            }
+                        </label>
+
+                        @*payment form of the selected method, inline under it*@
+                        @if (isSelected && Model.PaymentInfo != null)
+                        {
+                            <div class="payment-info mt-4 border-t border-primary-100 pt-4">
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutPaymentInfoTop, additionalData = Model.PaymentInfo })
+                                <div class="info">
+                                    @await Component.InvokeAsync(Model.PaymentInfo.PaymentViewComponent)
+                                </div>
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutPaymentInfoBottom, additionalData = Model.PaymentInfo })
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="message-error">@T("PaymentMethod.NotAvailableMethodsError")</div>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutPaymentMethodBottom, additionalData = methods })
+    </div>
+}

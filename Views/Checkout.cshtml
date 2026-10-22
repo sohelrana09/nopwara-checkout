@@ -1,0 +1,290 @@
+@model NopwaraCheckoutModel
+@using System.Text.Json
+@{
+    Layout = "_ColumnsOne";
+
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Plugins/{NopwaraCheckoutDefaults.PLUGIN_FOLDER}/Content/js/nopwara-checkout.js");
+
+    //themes other than Nopwara: the plugin's own (scoped) stylesheet and Alpine.js
+    if (Model.IncludeStyles)
+    {
+        NopHtml.AppendCssFileParts($"~/Plugins/{NopwaraCheckoutDefaults.PLUGIN_FOLDER}/Content/css/nopwara-checkout.css");
+    }
+    if (Model.IncludeAlpine)
+    {
+        NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Plugins/{NopwaraCheckoutDefaults.PLUGIN_FOLDER}/Content/js/alpine.min.js");
+    }
+
+    var billingPrefix = new ViewDataDictionary(ViewData);
+    billingPrefix.TemplateInfo.HtmlFieldPrefix = nameof(Model.Billing.BillingNewAddress);
+    var shippingPrefix = new ViewDataDictionary(ViewData);
+    shippingPrefix.TemplateInfo.HtmlFieldPrefix = nameof(Model.Shipping.ShippingNewAddress);
+
+    var config = JsonSerializer.Serialize(new
+    {
+        baseUrl = Url.RouteUrl(NopwaraCheckoutDefaults.CHECKOUT_ROUTE_NAME),
+        shippingRequired = Model.ShippingRequired,
+        shipToSame = Model.ShipToSameAddress,
+        billingAddressId = Model.SelectedBillingAddressId,
+        shippingAddressId = Model.SelectedShippingAddressId,
+        pickupInStore = Model.PickupInStore,
+        texts = new
+        {
+            fixErrors = T("Plugins.Misc.NopwaraCheckout.FixErrors").Text,
+            showSummary = T("Plugins.Misc.NopwaraCheckout.ShowSummary").Text,
+            hideSummary = T("Plugins.Misc.NopwaraCheckout.HideSummary").Text,
+            placeOrder = T("Plugins.Misc.NopwaraCheckout.PlaceOrder").Text,
+            placing = T("Checkout.SubmittingOrder").Text
+        }
+    });
+
+    const string cardCss = "rounded-xl border border-slate-200 bg-white p-5 sm:p-6";
+    const string cardTitleCss = "flex items-center gap-3 text-base font-semibold text-slate-900";
+    //steps are numbered with a CSS counter, so cards hidden by Alpine (shipping method while picking up in store) are skipped
+    const string stepCss = "flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white [counter-increment:nopwara-step] before:content-[counter(nopwara-step)]";
+    var pickupOffered = Model.PickupPoints != null;
+    var pickupOnly = pickupOffered && Model.PickupPoints.PickupInStoreOnly;
+}
+@*
+    Nopwara single-page checkout.
+    The root is x-ignore'd and initialized by nopwara-checkout.js once Alpine is running (works with or without bundling).
+    Every input lives in one form: section changes are saved by ajax (delegated handlers), "Place order" posts it all.
+*@
+@*"checkout-page" is the class Nopwara styles; other themes style it for their own checkout, so they get the plugin stylesheet (scoped to #nopwara-checkout) instead*@
+<div class="page @(Model.IncludeStyles ? null : "checkout-page ")nopwara-checkout" id="nopwara-checkout" x-ignore x-data="nopwaraCheckout(@config)">
+    <div class="page-title mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">@T("Checkout")</h1>
+            <p class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                @T("Plugins.Misc.NopwaraCheckout.SecureCheckout")
+            </p>
+        </div>
+        @*the cart page redirects back here when it's skipped*@
+        <a href="@(Model.SkipShoppingCart ? Url.RouteUrl(NopRouteNames.General.HOMEPAGE) : Url.RouteUrl(NopRouteNames.General.CART))" class="inline-flex items-center gap-1.5 text-sm font-medium">
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+            @(Model.SkipShoppingCart ? T("Plugins.Misc.NopwaraCheckout.ContinueShopping") : T("Plugins.Misc.NopwaraCheckout.EditCart"))
+        </a>
+    </div>
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpcContentBefore, additionalData = Model })
+
+    @if (Model.Login != null)
+    {
+        @*its own form: the checkout inputs aren't posted with it*@
+        @await Html.PartialAsync("_Login", Model.Login)
+    }
+
+    <form method="post" id="nopwara-checkout-form" novalidate enctype="multipart/form-data"
+          class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8"
+          x-on:submit.prevent="onSubmit($event)"
+          x-on:change="onChange($event)"
+          x-on:input="onInput($event)"
+          x-on:click="onClick($event)">
+        @*implicit submission (Enter in a field) hits this first submit button and is ignored*@
+        <button type="submit" name="noop" class="sr-only" tabindex="-1" aria-hidden="true"></button>
+
+        <div class="min-w-0 space-y-5 [counter-reset:nopwara-step]">
+            @*1. contact & billing address*@
+            <section class="@cardCss" data-address="billing">
+                <h2 class="@cardTitleCss mb-5"><span class="@stepCss" aria-hidden="true"></span>@T("Checkout.BillingAddress")</h2>
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutBillingAddressTop, additionalData = Model.Billing })
+                <template x-if="errors.billing">
+                    <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors.billing"><li x-text="message"></li></template></ul>
+                </template>
+
+                @if (Model.Billing.ExistingAddresses.Any())
+                {
+                    <div class="select-billing-address mb-5">
+                        <label for="billing-address-select">@T("Checkout.SelectBillingAddressOrEnterNewOne")</label>
+                        <div class="opc-select-address-container">
+                            <select name="billing_address_id" id="billing-address-select" class="address-select" x-model.number="billingAddressId">
+                                @foreach (var address in Model.Billing.ExistingAddresses)
+                                {
+                                    <option value="@address.Id" selected="@(address.Id == Model.SelectedBillingAddressId)">@address.FirstName @address.LastName, @address.Address1, @address.City</option>
+                                }
+                                <option value="0" selected="@(Model.SelectedBillingAddressId == 0)">@T("Checkout.NewAddress")</option>
+                            </select>
+                        </div>
+                    </div>
+                }
+                <div data-new-address="billing" x-show="!billingAddressId" @(Model.SelectedBillingAddressId > 0 ? Html.Raw("x-cloak") : null)>
+                    @if (Model.Billing.EuVatEnabled && Model.Billing.EuVatEnabledForGuests)
+                    {
+                        <div class="inputs mb-4">
+                            <label for="VatNumber">@T("Checkout.VatNumber"):</label>
+                            <input id="VatNumber" name="VatNumber" type="text" value="@Model.Billing.VatNumber" />
+                        </div>
+                    }
+                    @await Html.PartialAsync("_CreateOrUpdateAddress", Model.Billing.BillingNewAddress, billingPrefix)
+                </div>
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutBillingAddressBottom, additionalData = Model.Billing })
+            </section>
+
+            @if (Model.ShippingRequired)
+            {
+                @*2. shipping address*@
+                <section class="@cardCss" data-address="shipping">
+                    <h2 class="@cardTitleCss mb-5"><span class="@stepCss" aria-hidden="true"></span>@(pickupOffered ? T("Plugins.Misc.NopwaraCheckout.Delivery") : T("Checkout.ShippingAddress"))</h2>
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutShippingAddressTop, additionalData = Model.Shipping })
+                    <template x-if="errors.shipping">
+                        <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors.shipping"><li x-text="message"></li></template></ul>
+                    </template>
+
+                    @if (pickupOffered)
+                    {
+                        @*same form key as core: PickupInStore=true replaces the shipping address and method with a pickup point*@
+                        <input type="hidden" name="@NopwaraCheckoutDefaults.PICKUP_IN_STORE_FIELD" value="@(Model.PickupInStore ? "true" : "false")" :value="pickup ? 'true' : 'false'" />
+                        @if (!pickupOnly)
+                        {
+                            <div class="delivery-choice mb-5 grid grid-cols-2 gap-2" role="radiogroup">
+                                <button type="button" role="radio" class="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-sm font-semibold transition"
+                                        :class="pickup ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' : 'border-primary-600 bg-primary-50 text-primary-700'"
+                                        :aria-checked="!pickup" x-on:click="setPickup(false)">
+                                    <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+                                    @T("Plugins.Misc.NopwaraCheckout.Delivery.Ship")
+                                </button>
+                                <button type="button" role="radio" class="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-sm font-semibold transition"
+                                        :class="pickup ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'"
+                                        :aria-checked="pickup" x-on:click="setPickup(true)">
+                                    <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" /></svg>
+                                    @T("Plugins.Misc.NopwaraCheckout.Delivery.Pickup")
+                                </button>
+                            </div>
+                        }
+                        <div x-show="pickup" @(Model.PickupInStore ? null : Html.Raw("x-cloak"))>
+                            @await Html.PartialAsync("_PickupPoints", Model.PickupPoints)
+                        </div>
+                    }
+
+                    <div x-show="!pickup" @(Model.PickupInStore ? Html.Raw("x-cloak") : null) class="space-y-5">
+                    @if (Model.Billing.ShipToSameAddressAllowed)
+                    {
+                        <label class="ship-to-same-address mb-5 flex cursor-pointer items-center gap-2 rounded-md bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
+                            <input type="checkbox" name="ShipToSameAddress" value="true" x-model="shipToSame" checked="@Model.ShipToSameAddress" />
+                            @T("Checkout.ShipToSameAddress")
+                        </label>
+                    }
+                    <div x-show="!shipToSame" @(Model.ShipToSameAddress ? Html.Raw("x-cloak") : null) class="space-y-5">
+                        @if (Model.Shipping.ExistingAddresses.Any())
+                        {
+                            <div class="select-shipping-address">
+                                <label for="shipping-address-select">@T("Checkout.SelectShippingAddressOrEnterNewOne")</label>
+                                <div class="opc-select-address-container">
+                                    <select name="shipping_address_id" id="shipping-address-select" class="address-select" x-model.number="shippingAddressId">
+                                        @foreach (var address in Model.Shipping.ExistingAddresses)
+                                        {
+                                            <option value="@address.Id" selected="@(address.Id == Model.SelectedShippingAddressId)">@address.FirstName @address.LastName, @address.Address1, @address.City</option>
+                                        }
+                                        <option value="0" selected="@(Model.SelectedShippingAddressId == 0)">@T("Checkout.NewAddress")</option>
+                                    </select>
+                                </div>
+                            </div>
+                        }
+                        <div data-new-address="shipping" x-show="!shippingAddressId" @(Model.SelectedShippingAddressId > 0 ? Html.Raw("x-cloak") : null)>
+                            @await Html.PartialAsync("_CreateOrUpdateAddress", Model.Shipping.ShippingNewAddress, shippingPrefix)
+                        </div>
+                    </div>
+                    </div>
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutShippingAddressBottom, additionalData = Model.Shipping })
+                </section>
+
+                @*3. shipping method (not used while picking up in store)*@
+                <section class="@cardCss" :class="busy['shipping-methods'] && 'opacity-60'" x-show="!pickup" @(Model.PickupInStore ? Html.Raw("x-cloak") : null)>
+                    <h2 class="@cardTitleCss mb-5"><span class="@stepCss" aria-hidden="true"></span>@T("Checkout.ShippingMethod")</h2>
+                    <template x-if="errors['shipping-methods']">
+                        <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors['shipping-methods']"><li x-text="message"></li></template></ul>
+                    </template>
+                    <div data-section="shipping-methods">
+                        @await Html.PartialAsync("_ShippingMethods", Model.ShippingSection)
+                    </div>
+                </section>
+            }
+
+            @if (Model.ShowCheckoutAttributes)
+            {
+                @*order options (checkout attributes)*@
+                <section class="@cardCss" :class="busy.attributes && 'opacity-60'">
+                    <h2 class="@cardTitleCss mb-5"><span class="@stepCss" aria-hidden="true"></span>@T("Plugins.Misc.NopwaraCheckout.CheckoutAttributes")</h2>
+                    <template x-if="errors.attributes">
+                        <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors.attributes"><li x-text="message"></li></template></ul>
+                    </template>
+                    @await Html.PartialAsync("_CheckoutAttributes", Model.Cart)
+                </section>
+            }
+
+            @*4. payment*@
+            <section class="@cardCss" :class="busy.payment && 'opacity-60'">
+                <h2 class="@cardTitleCss mb-5"><span class="@stepCss" aria-hidden="true"></span>@T("Checkout.PaymentMethod")</h2>
+                <template x-if="errors.payment">
+                    <ul class="message-error mb-4 space-y-0.5"><template x-for="message in errors.payment"><li x-text="message"></li></template></ul>
+                </template>
+                <div data-section="payment">
+                    @await Html.PartialAsync("_Payment", Model.PaymentSection)
+                </div>
+            </section>
+        </div>
+
+        @*order summary*@
+        <aside class="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6 lg:sticky lg:top-4">
+            <button type="button" class="flex w-full items-center justify-between text-left lg:pointer-events-none" @@click="summaryOpen = !summaryOpen" :aria-expanded="summaryOpen">
+                <span class="text-base font-semibold text-slate-900">@T("Plugins.Misc.NopwaraCheckout.OrderSummary")</span>
+                <span class="flex items-center gap-1 text-sm font-medium text-primary-700 lg:hidden">
+                    <span x-text="summaryOpen ? texts.hideSummary : texts.showSummary"></span>
+                    <svg class="size-4 transition-transform" :class="summaryOpen && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                </span>
+            </button>
+
+            <div class="space-y-4 max-lg:hidden max-lg:data-open:block" :data-open="summaryOpen">
+                <template x-if="errors.cart">
+                    <ul class="message-error space-y-0.5"><template x-for="message in errors.cart"><li x-text="message"></li></template></ul>
+                </template>
+                <div data-section="cart" :class="busy.cart && 'opacity-60'">
+                    @await Html.PartialAsync("_Cart", Model.Cart)
+                </div>
+                @if (Model.ShowDiscountBox || Model.ShowGiftCardBox)
+                {
+                    <div data-section="coupons" class="border-t border-slate-200 pt-4" :class="busy.coupons && 'opacity-60'">
+                        @await Html.PartialAsync("_Coupons", Model.Cart)
+                    </div>
+                }
+            </div>
+
+            <div data-section="totals" class="border-t border-slate-200 pt-4" :class="busy.totals && 'opacity-60'">
+                @await Html.PartialAsync("_Totals", null)
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Confirm.MinOrderTotalWarning))
+            {
+                <p class="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">@Model.Confirm.MinOrderTotalWarning</p>
+            }
+
+            @if (Model.Confirm.TermsOfServiceOnOrderConfirmPage)
+            {
+                <div class="terms-of-service grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 text-sm text-slate-700">
+                    <input id="termsofservice" type="checkbox" name="termsofservice" class="mt-0.5" />
+                    <label for="termsofservice">@T("Checkout.TermsOfService.IAccept")</label>
+                    <a class="read col-start-2 font-medium" href="@(await NopUrl.RouteTopicUrlAsync("conditionsofuse"))" target="_blank">@T("Checkout.TermsOfService.Read")</a>
+                </div>
+            }
+
+            @if (Model.Confirm.DisplayCaptcha)
+            {
+                <div class="captcha-box"><nop-captcha /></div>
+            }
+
+            <template x-if="errors.order">
+                <ul class="message-error space-y-0.5"><template x-for="message in errors.order"><li x-text="message"></li></template></ul>
+            </template>
+
+            <button type="submit" name="placeorder" value="placeorder" class="btn btn-primary w-full py-3.5 text-base" :disabled="placing" :class="placing && 'cursor-wait opacity-70'">
+                <svg x-show="placing" x-cloak class="size-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"></path></svg>
+                <span x-text="placing ? texts.placing : texts.placeOrder">@T("Plugins.Misc.NopwaraCheckout.PlaceOrder")</span>
+            </button>
+        </aside>
+    </form>
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpcContentAfter, additionalData = Model })
+</div>

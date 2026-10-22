@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Nopwara single-page checkout",
+  "SystemName": "Misc.NopwaraCheckout",
+  "Version": "1.10",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Nopwara",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.NopwaraCheckout.dll",
+  "Description": "True single-page checkout (addresses, shipping, payment, cart and totals on one page) with login, pickup in store, checkout attributes and Buy now. Styled by Nopwara or by its own stylesheet on other themes."
+}

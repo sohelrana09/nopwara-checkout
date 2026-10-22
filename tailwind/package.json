@@ -1,0 +1,14 @@
+{
+  "name": "nopwara-checkout-styles",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "Stylesheet of the Nopwara single-page checkout for themes that don't style its views (every theme but Nopwara)",
+  "scripts": {
+    "build:css": "tailwindcss -i app.css -o ../Content/css/nopwara-checkout.css --minify",
+    "watch": "tailwindcss -i app.css -o ../Content/css/nopwara-checkout.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

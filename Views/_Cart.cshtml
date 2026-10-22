@@ -1,0 +1,66 @@
+@model ShoppingCartModel
+@using Nop.Core.Domain.Catalog
+@*
+    Compact cart for the order summary (re-rendered by ajax).
+    Quantity steppers / remove buttons carry data-cart-* attributes handled by the page's delegated click handler.
+*@
+<ul class="divide-y divide-slate-100">
+    @foreach (var item in Model.Items)
+    {
+        var productUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName });
+        <li class="flex gap-3 py-3 first:pt-0">
+            <a href="@productUrl" class="relative shrink-0">
+                <img src="@item.Picture.ImageUrl" alt="@item.Picture.AlternateText" class="size-16 rounded-md border border-slate-100 bg-white object-contain" />
+                @if (!Model.IsEditable)
+                {
+                    <span class="absolute -right-2 -top-2 flex size-5 items-center justify-center rounded-full bg-slate-700 text-[0.65rem] font-semibold text-white">@item.Quantity</span>
+                }
+            </a>
+            <div class="min-w-0 flex-1 space-y-1 text-sm">
+                <div class="flex items-start justify-between gap-2">
+                    <a href="@productUrl" class="line-clamp-2 font-medium text-slate-900 hover:text-primary-600">@item.ProductName</a>
+                    <span class="shrink-0 font-semibold text-slate-900">@item.SubTotal</span>
+                </div>
+                @if (!string.IsNullOrEmpty(item.AttributeInfo))
+                {
+                    <div class="text-xs leading-relaxed text-slate-500">@Html.Raw(item.AttributeInfo)</div>
+                }
+                @if (Model.IsEditable)
+                {
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                        @if (item.AllowedQuantities.Count > 0)
+                        {
+                            <select class="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs" data-cart-select="@item.Id" aria-label="@T("ShoppingCart.Quantity")">
+                                @foreach (var qty in item.AllowedQuantities)
+                                {
+                                    <option value="@qty.Value" selected="@qty.Selected">@qty.Value</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="flex items-stretch overflow-hidden rounded-md border border-slate-300 bg-white text-xs">
+                                <button type="button" class="px-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" data-cart-qty="@item.Id" data-quantity="@(item.Quantity - 1)" aria-label="-">&minus;</button>
+                                <span class="min-w-7 border-x border-slate-200 px-1.5 py-1 text-center">@item.Quantity</span>
+                                <button type="button" class="px-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" data-cart-qty="@item.Id" data-quantity="@(item.Quantity + 1)" aria-label="+">+</button>
+                            </div>
+                        }
+                        @if (!item.DisableRemoval)
+                        {
+                            <button type="button" class="text-xs font-medium text-slate-400 hover:text-red-600" data-cart-qty="@item.Id" data-quantity="0">@T("ShoppingCart.Remove")</button>
+                        }
+                    </div>
+                }
+                @if (item.Warnings.Any())
+                {
+                    <ul class="rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-800">
+                        @foreach (var warning in item.Warnings)
+                        {
+                            <li>@Html.Raw(warning)</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </li>
+    }
+</ul>

@@ -1,0 +1,122 @@
+@model Nop.Plugin.Misc.NopwaraCheckout.Models.ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="NopwaraCheckoutAdmin" asp-action="Configure" method="post">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card card-default">
+                <div class="card-body">
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="Enabled" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="Enabled" />
+                            <span asp-validation-for="Enabled"></span>
+                        </div>
+                    </div>
+                    <nop-nested-setting asp-for="Enabled">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="AllowedThemes" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="AllowedThemes" />
+                                <span asp-validation-for="AllowedThemes"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ThemesWithBuiltInStyles" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ThemesWithBuiltInStyles" />
+                                <span asp-validation-for="ThemesWithBuiltInStyles"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ThemesWithAlpine" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ThemesWithAlpine" />
+                                <span asp-validation-for="ThemesWithAlpine"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="AllowCartEditing" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="AllowCartEditing" />
+                                <span asp-validation-for="AllowCartEditing"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowDiscountBox" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowDiscountBox" />
+                                <span asp-validation-for="ShowDiscountBox"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowGiftCardBox" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowGiftCardBox" />
+                                <span asp-validation-for="ShowGiftCardBox"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowLoginOnCheckout" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowLoginOnCheckout" />
+                                <span asp-validation-for="ShowLoginOnCheckout"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowCheckoutAttributes" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowCheckoutAttributes" />
+                                <span asp-validation-for="ShowCheckoutAttributes"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="SkipShoppingCart" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="SkipShoppingCart" />
+                                <span asp-validation-for="SkipShoppingCart"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowBuyNowButton" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowBuyNowButton" />
+                                <span asp-validation-for="ShowBuyNowButton"></span>
+                            </div>
+                        </div>
+                    </nop-nested-setting>
+                    <div class="form-group row">
+                        <div class="col-md-9 offset-md-3">
+                            <input type="submit" name="save" class="btn btn-primary" value="@T("Admin.Common.Save")" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>

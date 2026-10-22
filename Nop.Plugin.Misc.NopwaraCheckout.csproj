@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputPath>$(SolutionDir)\Presentation\Nop.Web\Plugins\Misc.NopwaraCheckout</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+    <!--Set this parameter to true to get the dlls copied from the NuGet cache to the output of your project.
+    You need to set this parameter to true if your plugin has a nuget package
+    to ensure that the dlls copied from the NuGet cache to the output of your project-->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!--Tailwind build tooling of the plugin stylesheet (tailwind/README: npm run build:css) is not part of the plugin-->
+    <DefaultItemExcludes>$(DefaultItemExcludes);tailwind\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="logo.png" />
+    <None Remove="plugin.json" />
+    <None Remove="Views\**\*.cshtml" />
+    <None Remove="Content\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="logo.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="plugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Views\**\*.cshtml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Content\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\Presentation\Nop.Web\Nop.Web.csproj" />
+    <ClearPluginAssemblies Include="$(SolutionDir)\Build\ClearPluginAssemblies.proj" />
+  </ItemGroup>
+
+  <!-- This target execute after "Build" target -->
+  <Target Name="NopTarget" AfterTargets="Build">
+    <!-- Delete unnecessary libraries from plugins path -->
+    <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(OutDir)" Targets="NopClear" />
+  </Target>
+
+</Project>

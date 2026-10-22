@@ -1,0 +1,106 @@
+@model ShoppingCartModel
+@using Nop.Core
+@using Nop.Core.Domain.Catalog
+@inject CatalogSettings catalogSettings
+@*
+    Checkout attributes ("Order options"). Same control names as core _CheckoutAttributes (checkout_attribute_{id},
+    date parts _day/_month/_year), so core parsing rules apply; changes are saved by the page's delegated change handler
+    (checkoutattributes), which also shows/hides conditional attributes. File uploads are done on the cart page:
+    the current file is posted back unchanged.
+*@
+<div class="checkout-attributes" data-checkout-attributes>
+    <dl class="space-y-5">
+        @foreach (var attribute in Model.CheckoutAttributes)
+        {
+            var controlId = $"{NopwaraCheckoutDefaults.CHECKOUT_ATTRIBUTE_PREFIX}{attribute.Id}";
+            var textPrompt = !string.IsNullOrEmpty(attribute.TextPrompt) ? attribute.TextPrompt : attribute.Name;
+            var textPromptId = $"{controlId}_textprompt";
+            string ValueName(ShoppingCartModel.CheckoutAttributeValueModel value) => string.IsNullOrEmpty(value.PriceAdjustment)
+                ? value.Name
+                : T("ShoppingCart.CheckoutAttributes.PriceAdjustment", value.Name, value.PriceAdjustment).Text;
+
+            <div class="space-y-2" id="checkout_attribute_block_@(attribute.Id)">
+                <dt id="checkout_attribute_label_@(attribute.Id)" class="text-sm font-medium text-slate-800">
+                    <span id="@textPromptId">@textPrompt</span>
+                    @if (attribute.IsRequired)
+                    {
+                        <span class="text-red-500" aria-hidden="true">*</span>
+                    }
+                </dt>
+                <dd id="checkout_attribute_input_@(attribute.Id)">
+                    @switch (attribute.AttributeControlType)
+                    {
+                        case AttributeControlType.DropdownList:
+                            <select name="@controlId" id="@controlId" aria-labelledby="@textPromptId"
+                                    class="w-full max-w-md rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+                                @if (!attribute.IsRequired)
+                                {
+                                    <option value="0">---</option>
+                                }
+                                @foreach (var value in attribute.Values)
+                                {
+                                    <option selected="@value.IsPreSelected" value="@value.Id">@ValueName(value)</option>
+                                }
+                            </select>
+                            break;
+
+                        case AttributeControlType.RadioList:
+                        case AttributeControlType.Checkboxes:
+                        case AttributeControlType.ReadonlyCheckboxes:
+                        case AttributeControlType.ColorSquares:
+                        case AttributeControlType.ImageSquares:
+                            var isCheckbox = attribute.AttributeControlType is AttributeControlType.Checkboxes or AttributeControlType.ReadonlyCheckboxes;
+                            var isReadonly = attribute.AttributeControlType == AttributeControlType.ReadonlyCheckboxes;
+                            <ul class="flex flex-wrap gap-2" role="@(isCheckbox ? "group" : "radiogroup")" aria-labelledby="@textPromptId">
+                                @foreach (var value in attribute.Values)
+                                {
+                                    <li>
+                                        <label for="@(controlId)_@(value.Id)"
+                                               class="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-colors has-[input:checked]:border-primary-600 has-[input:checked]:bg-primary-50 has-[input:disabled]:cursor-default">
+                                            <input id="@(controlId)_@(value.Id)" type="@(isCheckbox ? "checkbox" : "radio")" name="@controlId" value="@value.Id"
+                                                   checked="@value.IsPreSelected" disabled="@isReadonly" class="size-4 accent-primary-600" />
+                                            @if (attribute.AttributeControlType == AttributeControlType.ColorSquares && !string.IsNullOrEmpty(value.ColorSquaresRgb))
+                                            {
+                                                <span class="size-4 rounded-full border border-slate-300" style="background-color:@value.ColorSquaresRgb" aria-hidden="true"></span>
+                                            }
+                                            @ValueName(value)
+                                        </label>
+                                    </li>
+                                }
+                            </ul>
+                            break;
+
+                        case AttributeControlType.TextBox:
+                            <input name="@controlId" id="@controlId" type="text" value="@(attribute.DefaultValue)" aria-labelledby="@textPromptId"
+                                   class="w-full max-w-md rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                            break;
+
+                        case AttributeControlType.MultilineTextbox:
+                            <textarea name="@controlId" id="@controlId" rows="3" aria-labelledby="@textPromptId"
+                                      class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">@(attribute.DefaultValue)</textarea>
+                            break;
+
+                        case AttributeControlType.Datepicker:
+                            <div class="nopwara-date-picker flex flex-wrap gap-2 [&_select]:rounded-md [&_select]:border [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm">
+                                <nop-date-picker asp-day-name="@(controlId + "_day")"
+                                                 asp-month-name="@(controlId + "_month")"
+                                                 asp-year-name="@(controlId + "_year")"
+                                                 asp-begin-year="@DateTime.UtcNow"
+                                                 asp-end-year="@DateTime.UtcNow.AddYears(catalogSettings.CountDisplayedYearsDatePicker)"
+                                                 asp-selected-date="@CommonHelper.ParseDate(attribute.SelectedYear, attribute.SelectedMonth, attribute.SelectedDay)" />
+                            </div>
+                            break;
+
+                        case AttributeControlType.FileUpload:
+                            <input type="hidden" name="@controlId" id="@controlId" value="@(attribute.DefaultValue)" />
+                            <p class="text-sm text-slate-500">
+                                @T("Plugins.Misc.NopwaraCheckout.CheckoutAttributes.FileUpload")
+                                <a href="@Url.RouteUrl(NopRouteNames.General.CART)" class="font-medium">@T("Plugins.Misc.NopwaraCheckout.EditCart")</a>
+                            </p>
+                            break;
+                    }
+                </dd>
+            </div>
+        }
+    </dl>
+</div>

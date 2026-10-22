@@ -1,0 +1,70 @@
+@model NopwaraLoginModel
+@*
+    "Returning customer?" card for guests. A form of its own (outside the checkout form) posted by the page's
+    login() over ajax; on success the page reloads signed in (the guest cart is migrated by core sign-in).
+*@
+@{
+    var inputCss = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+}
+<section class="nopwara-checkout-login mb-6 rounded-xl border border-slate-200 bg-white px-5 py-4 sm:px-6" x-data="{ open: false }">
+    <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <p class="flex items-center gap-2 text-slate-700">
+            <svg class="size-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+            <span class="font-medium text-slate-900">@T("Plugins.Misc.NopwaraCheckout.Login.Title")</span>
+        </p>
+        <button type="button" class="inline-flex items-center gap-1 font-semibold text-primary-700 hover:text-primary-600" x-on:click="open = !open; open && $nextTick(() => $refs.login.querySelector('input:not([type=hidden])').focus())" :aria-expanded="open" aria-controls="nopwara-login-form">
+            @T("Plugins.Misc.NopwaraCheckout.Login.Toggle")
+            <svg class="size-4 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+        </button>
+    </div>
+
+    <form id="nopwara-login-form" method="post" x-ref="login" x-show="open" x-cloak novalidate class="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2"
+          x-on:submit.prevent="login($el)">
+        <p class="text-sm text-slate-500 sm:col-span-2">@T("Plugins.Misc.NopwaraCheckout.Login.Intro")</p>
+        @if (Model.UsernamesEnabled)
+        {
+            <div class="flex flex-col gap-1">
+                <label for="nopwara-login-username" class="text-sm font-medium text-slate-700">@T("Account.Login.Fields.Username")</label>
+                <input id="nopwara-login-username" name="username" type="text" autocomplete="username" class="@inputCss" />
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col gap-1">
+                <label for="nopwara-login-email" class="text-sm font-medium text-slate-700">@T("Account.Login.Fields.Email")</label>
+                <input id="nopwara-login-email" name="email" type="email" autocomplete="email" class="@inputCss" />
+            </div>
+        }
+        <div class="flex flex-col gap-1">
+            <label for="nopwara-login-password" class="text-sm font-medium text-slate-700">@T("Account.Login.Fields.Password")</label>
+            <input id="nopwara-login-password" name="password" type="password" autocomplete="current-password" class="@inputCss" />
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 text-sm sm:col-span-2">
+            <label class="inline-flex cursor-pointer items-center gap-2 text-slate-700">
+                <input type="checkbox" name="rememberMe" value="true" class="size-4 accent-primary-600" />
+                @T("Account.Login.Fields.RememberMe")
+            </label>
+            <span class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                @if (Model.LoginByPhoneEnabled)
+                {
+                    <a href="@Model.LoginPageUrl" class="font-medium">@T("Plugins.Misc.NopwaraCheckout.Login.ByPhone")</a>
+                }
+                <a href="@Url.RouteUrl(NopRouteNames.Standard.PASSWORD_RECOVERY)" class="font-medium">@T("Account.Login.ForgotPassword")</a>
+            </span>
+        </div>
+        @if (Model.DisplayCaptcha)
+        {
+            @*reCAPTCHA v3 checks the action against the posting action name (NopwaraCheckoutController.Login)*@
+            <div class="captcha-box sm:col-span-2"><nop-captcha action-name="Login" /></div>
+        }
+        <template x-if="errors.login">
+            <ul class="message-error space-y-0.5 sm:col-span-2" role="alert"><template x-for="message in errors.login"><li x-text="message"></li></template></ul>
+        </template>
+        <div class="sm:col-span-2">
+            <button type="submit" class="btn btn-primary px-5 py-2.5" :disabled="busy.login" :class="busy.login && 'cursor-wait opacity-70'">
+                <svg x-show="busy.login" x-cloak class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"></path></svg>
+                @T("Plugins.Misc.NopwaraCheckout.Login.Submit")
+            </button>
+        </div>
+    </form>
+</section>

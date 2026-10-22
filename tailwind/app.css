@@ -1,0 +1,288 @@
+/*
+ * Nopwara single-page checkout: stylesheet for themes that don't style the checkout views themselves
+ * (setting "Themes with built-in styles"; Nopwara builds these views into its own Tailwind CSS).
+ * Build output: ../Content/css/nopwara-checkout.css (npm install && npm run build:css)
+ *
+ * It must not change anything outside the checkout page and must win over the host theme's CSS there:
+ *  - no preflight (Tailwind's global reset); a small reset scoped to #nopwara-checkout instead
+ *  - nothing is put in cascade layers (unlayered theme CSS would beat any layered rule)
+ *  - utilities are !important, component rules use the #nopwara-checkout id
+ *    (utilities used with @apply are !important too: don't @apply margins that a space-* utility should set)
+ */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css" source(none) important;
+
+@source "../Views";
+@source "../Content/js/nopwara-checkout.js";
+
+@theme {
+  --color-primary-50: oklch(0.97 0.02 255);
+  --color-primary-100: oklch(0.93 0.04 255);
+  --color-primary-200: oklch(0.87 0.07 255);
+  --color-primary-300: oklch(0.79 0.11 255);
+  --color-primary-500: oklch(0.6 0.17 255);
+  --color-primary-600: oklch(0.52 0.18 255);
+  --color-primary-700: oklch(0.45 0.16 255);
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
+/* ---------- scoped reset (subset of Tailwind preflight) ---------- */
+#nopwara-checkout {
+  @apply text-left text-base leading-normal text-slate-800;
+  font-family: inherit;
+  white-space: normal;
+}
+#nopwara-checkout *,
+#nopwara-checkout ::before,
+#nopwara-checkout ::after {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+#nopwara-checkout :where(h1, h2, h3, h4, p, ul, ol, dl, dd, dt, figure, blockquote, fieldset) {
+  margin: 0;
+  padding: 0;
+}
+#nopwara-checkout :where(ul, ol) {
+  list-style: none;
+}
+#nopwara-checkout :where(h1, h2, h3, h4) {
+  font-size: inherit;
+  font-weight: inherit;
+}
+#nopwara-checkout :where(img, svg) {
+  display: block;
+  max-width: 100%;
+}
+#nopwara-checkout svg {
+  vertical-align: middle;
+}
+#nopwara-checkout :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+#nopwara-checkout button {
+  background-color: transparent;
+  cursor: pointer;
+  padding: 0;
+  height: auto;
+  min-width: 0;
+  text-transform: none;
+}
+#nopwara-checkout button:disabled {
+  cursor: default;
+}
+#nopwara-checkout [hidden] {
+  display: none !important;
+}
+#nopwara-checkout a {
+  @apply text-primary-600 hover:text-primary-700;
+}
+#nopwara-checkout label {
+  vertical-align: baseline;
+}
+
+/* ---------- components (same as the Nopwara theme's) ---------- */
+#nopwara-checkout .btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition;
+}
+#nopwara-checkout .btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 hover:text-white;
+}
+#nopwara-checkout .page-title {
+  @apply mb-6 min-h-0 border-0 p-0;
+}
+#nopwara-checkout .page-title::after {
+  content: none;
+}
+
+/* addresses (core _CreateOrUpdateAddress) */
+#nopwara-checkout input[type="checkbox"],
+#nopwara-checkout input[type="radio"] {
+  @apply m-0 size-4 shrink-0 accent-primary-600;
+}
+#nopwara-checkout .select-billing-address,
+#nopwara-checkout .select-shipping-address {
+  @apply space-y-2 text-sm;
+}
+#nopwara-checkout .select-billing-address > label,
+#nopwara-checkout .select-shipping-address > label {
+  @apply block font-medium text-slate-700;
+}
+#nopwara-checkout .opc-select-address-container {
+  @apply flex flex-wrap items-center gap-2;
+}
+#nopwara-checkout .edit-address {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+#nopwara-checkout .inputs {
+  @apply m-0 flex flex-col gap-1 text-left text-sm whitespace-normal;
+}
+#nopwara-checkout .inputs::after {
+  content: none;
+}
+#nopwara-checkout .inputs label {
+  @apply m-0 block w-auto text-left text-sm font-medium text-slate-700;
+}
+/* the marker is toggled with inline display by core scripts (state required per country): hide it and mirror it on the label */
+#nopwara-checkout .inputs .required {
+  @apply sr-only;
+}
+#nopwara-checkout .inputs:has(.required:not([style*="none"])) > label {
+  @apply after:ml-0.5 after:text-red-500 after:content-['*'];
+}
+#nopwara-checkout select,
+#nopwara-checkout .inputs input[type="text"],
+#nopwara-checkout .inputs input[type="email"],
+#nopwara-checkout .inputs input[type="tel"],
+#nopwara-checkout .inputs textarea,
+#nopwara-checkout .payment-info input[type="text"],
+#nopwara-checkout .payment-info input[type="tel"],
+#nopwara-checkout .payment-info select {
+  @apply h-auto w-full max-w-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+}
+#nopwara-checkout .opc-select-address-container select {
+  @apply w-auto min-w-0 flex-1;
+}
+#nopwara-checkout .input-validation-error {
+  @apply border-red-400;
+}
+#nopwara-checkout .field-validation-error {
+  @apply block text-left text-xs text-red-600;
+}
+#nopwara-checkout .message-error {
+  @apply m-0 rounded-md bg-red-50 px-3 py-2 text-left text-sm text-red-800 empty:hidden;
+}
+
+/* shipping, pickup and payment methods: the whole row is a selectable card */
+#nopwara-checkout .method-list {
+  @apply m-0 space-y-2;
+}
+#nopwara-checkout .method-list > li {
+  @apply mx-0 mt-0 mb-2 block w-auto rounded-lg border border-slate-200 p-4 last:mb-0 text-left transition-colors has-[input:checked]:border-primary-600 has-[input:checked]:bg-primary-50/60;
+}
+#nopwara-checkout .method-list label {
+  @apply cursor-pointer text-sm font-medium text-slate-800;
+}
+#nopwara-checkout .method-list label span {
+  @apply mb-0 h-auto min-h-0;
+}
+#nopwara-checkout .use-reward-points {
+  @apply mb-3 flex items-center gap-2 text-sm;
+}
+#nopwara-checkout .payment-info .info {
+  @apply m-0 space-y-3 p-0 text-left text-sm;
+}
+#nopwara-checkout .payment-info .info :where(p, div, td, th, li, span) {
+  text-align: left;
+}
+
+/* checkout attributes (plugin _CheckoutAttributes) */
+#nopwara-checkout .checkout-attributes {
+  @apply m-0 p-0 text-left;
+}
+#nopwara-checkout .checkout-attributes :where(dl, dt, dd) {
+  @apply float-none m-0 w-auto p-0 text-left;
+}
+#nopwara-checkout .payment-info table {
+  @apply w-full;
+}
+#nopwara-checkout .payment-info td {
+  @apply py-1 pr-3 align-middle;
+}
+
+/* order totals (core OrderTotals component) */
+#nopwara-checkout .total-info {
+  @apply m-0 w-full p-0;
+}
+#nopwara-checkout .total-info .cart-total {
+  @apply w-full text-sm;
+}
+#nopwara-checkout .total-info .cart-total td {
+  @apply w-auto border-0 py-1.5 align-top;
+}
+#nopwara-checkout .total-info .cart-total-left {
+  @apply pr-3 text-left whitespace-nowrap text-slate-600;
+}
+#nopwara-checkout .total-info .cart-total-right {
+  @apply text-right font-medium text-slate-900;
+}
+#nopwara-checkout .total-info .cart-total label {
+  @apply m-0 font-normal;
+}
+#nopwara-checkout .total-info .selected-shipping-method,
+#nopwara-checkout .total-info .giftcard-remaining {
+  @apply block text-xs text-slate-500;
+}
+#nopwara-checkout .total-info .order-total td {
+  @apply border-t border-slate-200 pt-3 text-base;
+}
+#nopwara-checkout .total-info .order-total .cart-total-left,
+#nopwara-checkout .total-info .order-total .cart-total-left label {
+  @apply font-semibold text-slate-900;
+}
+#nopwara-checkout .total-info .order-total .cart-total-right,
+#nopwara-checkout .total-info .order-total strong {
+  @apply text-lg font-bold text-slate-900;
+}
+#nopwara-checkout .total-info .discount-total .cart-total-right,
+#nopwara-checkout .total-info .order-subtotal-discount .cart-total-right {
+  @apply text-emerald-700;
+}
+#nopwara-checkout .total-info .earn-reward-points td {
+  @apply text-xs text-slate-500;
+}
+
+/* coupon + gift card boxes (core _DiscountBox / _GiftCardBox) */
+#nopwara-checkout .cart-collaterals {
+  @apply float-none m-0 w-auto p-0;
+}
+#nopwara-checkout .cart-collaterals .deals,
+#nopwara-checkout .cart-collaterals > div {
+  @apply float-none m-0 w-auto max-w-none p-0;
+}
+#nopwara-checkout .cart-collaterals .coupon-box,
+#nopwara-checkout .cart-collaterals .giftcard-box {
+  @apply m-0 space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left text-sm;
+}
+#nopwara-checkout .cart-collaterals .title {
+  @apply m-0 text-left text-sm font-semibold text-slate-900;
+}
+#nopwara-checkout .cart-collaterals .hint {
+  @apply m-0 text-left text-xs text-slate-500;
+}
+#nopwara-checkout .cart-collaterals .coupon-code {
+  @apply m-0 flex overflow-hidden rounded-md border border-slate-300 bg-white focus-within:border-primary-500;
+}
+#nopwara-checkout .cart-collaterals .coupon-code input {
+  @apply float-none h-auto w-auto min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm outline-none;
+}
+#nopwara-checkout .cart-collaterals .coupon-code button {
+  @apply float-none h-auto w-auto border-0 border-l border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100;
+}
+#nopwara-checkout .cart-collaterals .message-success {
+  @apply text-xs text-emerald-700;
+}
+#nopwara-checkout .cart-collaterals .message-failure {
+  @apply text-xs text-red-600;
+}
+#nopwara-checkout .cart-collaterals .current-code {
+  @apply flex items-center text-xs text-slate-700;
+}
+#nopwara-checkout .remove-discount-button,
+#nopwara-checkout .remove-gift-card-button {
+  @apply ml-1 inline-flex size-5 cursor-pointer items-center justify-center rounded-full border-0 bg-slate-200 p-0 align-middle text-slate-600 after:content-['×'] hover:bg-red-100 hover:text-red-600;
+  background-image: none;
+  font-size: 0.875rem;
+}
+
+/* terms of service, captcha */
+#nopwara-checkout .terms-of-service label {
+  @apply m-0 text-sm;
+}
+#nopwara-checkout .captcha-box {
+  @apply text-left;
+}

@@ -1,0 +1,28 @@
+@model BuyNowModel
+@*
+    "Buy now": adds the product with the product form (core ajax add-to-cart) and opens the checkout.
+    Nopwara styles it with Tailwind; other themes get their core button class.
+*@
+@{
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, $"~/Plugins/{NopwaraCheckoutDefaults.PLUGIN_FOLDER}/Content/js/nopwara-buynow.js");
+    var css = Model.ThemeStyled
+        ? "nopwara-buy-now btn w-full border border-slate-900 bg-slate-900 py-3 text-base text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-70"
+        : "nopwara-buy-now";
+}
+@if (!Model.ThemeStyled)
+{
+    @*themes without the plugin styles: a plain full-width dark button under "Add to cart"*@
+    <style>
+        .buy-now { margin-top: 10px; }
+        .buy-now .nopwara-buy-now { display: block; width: 100%; max-width: 400px; min-height: 40px; padding: 0 20px; border: none; background: #444; color: #fff; font: inherit; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .buy-now .nopwara-buy-now:hover, .buy-now .nopwara-buy-now:focus { background: #222; }
+        .buy-now .nopwara-buy-now:disabled { opacity: .7; cursor: wait; }
+    </style>
+}
+<div class="buy-now">
+    <button type="button" id="buy-now-button-@Model.ProductId" class="@css"
+            data-nopwara-buy-now="@Model.AddToCartUrl" data-checkout-url="@Model.CheckoutUrl" data-cart-url="@Url.RouteUrl(NopRouteNames.General.CART)"
+            data-error="@T("Plugins.Misc.NopwaraCheckout.BuyNow.Error").Text">
+        @T("Plugins.Misc.NopwaraCheckout.BuyNow")
+    </button>
+</div>

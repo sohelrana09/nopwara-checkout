@@ -1,0 +1,5 @@
+@*
+    Totals (re-rendered by ajax). isEditable: true renders the core "remove gift card" submit buttons
+    (name="removegiftcard-{id}"); the page's submit handler turns them into ajax calls.
+*@
+@await Component.InvokeAsync(typeof(OrderTotalsViewComponent), new { isEditable = true })

@@ -1,0 +1,69 @@
+@model NopwaraShippingSectionModel
+@*
+    Shipping methods section (re-rendered by ajax). Changes are picked up by the page's delegated
+    @change handler (name="shippingoption"); markup mirrors core OpcShippingMethods so core styles/scripts apply.
+*@
+@if (Model.ShippingMethods == null)
+{
+    <p class="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500">
+        <svg class="size-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+        @T("Plugins.Misc.NopwaraCheckout.ShippingMethods.EnterAddress")
+    </p>
+}
+else
+{
+    var methods = Model.ShippingMethods;
+    <div class="section shipping-method" id="shipping-methods-form">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutShippingMethodTop, additionalData = methods })
+        @if (methods.Warnings.Any())
+        {
+            <div class="message-error">
+                <ul class="space-y-1">
+                    @foreach (var warning in methods.Warnings)
+                    {
+                        <li>@warning</li>
+                    }
+                </ul>
+            </div>
+        }
+        else
+        {
+            <ul class="method-list">
+                @for (var i = 0; i < methods.ShippingMethods.Count; i++)
+                {
+                    var shippingMethod = methods.ShippingMethods[i];
+                    <li>
+                        <label for="shippingoption_@(i)" class="flex cursor-pointer items-start gap-3">
+                            <input id="shippingoption_@(i)" type="radio" name="shippingoption" class="mt-0.5"
+                                   value="@(shippingMethod.Name)@(NopwaraCheckoutDefaults.OPTION_SEPARATOR)@(shippingMethod.ShippingRateComputationMethodSystemName)"
+                                   checked="@shippingMethod.Selected" />
+                            <span class="min-w-0 flex-1">
+                                <span class="flex flex-wrap items-baseline justify-between gap-x-3">
+                                    <span class="font-medium text-slate-900">@shippingMethod.Name</span>
+                                    <span class="font-semibold text-slate-900">@shippingMethod.Fee</span>
+                                </span>
+                                @if (!string.IsNullOrEmpty(shippingMethod.Description))
+                                {
+                                    <span class="mt-0.5 block text-xs text-slate-500">@Html.Raw(shippingMethod.Description)</span>
+                                }
+                            </span>
+                        </label>
+                        @if (shippingMethod.DesiredDeliveryDate?.Enabled ?? false)
+                        {
+                            <input type="hidden" name="ShippingMethods[@(i)].DesiredDeliveryDate.SelectedDate" id="deliverydate_@(i)" value="@shippingMethod.DesiredDeliveryDate?.SelectedDate" />
+                        }
+                    </li>
+                }
+            </ul>
+            if (methods.ShippingMethods.Any(m => m.DesiredDeliveryDate?.Enabled ?? false))
+            {
+                @await Html.PartialAsync("_DesiredDeliveryDate", methods.ShippingMethods)
+            }
+            if (methods.NotifyCustomerAboutShippingFromMultipleLocations)
+            {
+                <p class="multiple-locations mt-3 text-xs text-slate-500">@T("Checkout.ShippingMethod.ShippingFromMultipleLocations")</p>
+            }
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OpCheckoutShippingMethodBottom, additionalData = methods })
+    </div>
+}

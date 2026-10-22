@@ -1,0 +1,16 @@
+@model ShoppingCartModel
+@inject NopwaraCheckoutSettings checkoutSettings
+@*
+    Discount + gift card boxes: the core partials (their submit buttons - apply/remove - are turned into
+    ajax calls by the page's submit handler; core's Enter-key scripts keep working).
+*@
+<div class="cart-collaterals space-y-3">
+    @if (checkoutSettings.ShowDiscountBox)
+    {
+        @await Html.PartialAsync("_DiscountBox", Model.DiscountBox)
+    }
+    @if (checkoutSettings.ShowGiftCardBox)
+    {
+        @await Html.PartialAsync("~/Views/ShoppingCart/_GiftCardBox.cshtml", Model.GiftCardBox)
+    }
+</div>

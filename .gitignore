@@ -1,0 +1,4 @@
+bin/
+obj/
+tailwind/node_modules/
+.DS_Store
