@@ -4,7 +4,8 @@
  * - One form holds every input. Changes are handled by delegated listeners on the form, so markup re-rendered
  *   by the server (shipping/payment/cart/totals sections) needs no Alpine directives of its own.
  * - Requests are queued (one at a time) so section updates never race each other.
- * - Sections are swapped with jQuery's .html() so inline <script> of payment plugins and core partials run
+ * - Sections are swapped with nw.html (Nopwara theme) or jQuery's .html() so inline <script> of payment plugins and core
+ *   partials run
  *   (the server renders them inline because requests send X-Requested-With: XMLHttpRequest).
  * - The root element is x-ignore'd and initialized on DOMContentLoaded, when Alpine is guaranteed to be
  *   running, whether scripts are bundled or not.
@@ -29,7 +30,8 @@
             _addressTimer: null,
 
             init: function () {
-                this.form = this.$root.querySelector('form');
+                //by id: for guests the login form (_Login.cshtml) comes first
+                this.form = this.$root.querySelector('#nopwara-checkout-form');
 
                 //existing address / "ship to same" switches are saved right away - after Alpine has shown/hidden
                 //the related address form, so the completeness check sees the right fields
@@ -120,7 +122,10 @@
                     var target = self.form.querySelector('[data-section="' + name + '"]');
                     if (!target)
                         return;
-                    if (window.jQuery)
+                    //inline scripts of payment plugins and core partials must run: nw.html (Nopwara theme), jQuery elsewhere
+                    if (window.nw)
+                        window.nw.html(target, result.sections[name]);
+                    else if (window.jQuery)
                         window.jQuery(target).html(result.sections[name]);
                     else
                         target.innerHTML = result.sections[name];
@@ -387,9 +392,11 @@
                 if (this.placing)
                     return;
 
-                //client-side validation of the visible fields (hidden address forms are ignored by jQuery validate)
-                var $ = window.jQuery;
-                if ($ && $(this.form).data('validator') && !$(this.form).valid()) {
+                //client-side validation of the visible fields (hidden address forms are skipped): nw.validate with the
+                //Nopwara theme, jQuery Validate where a theme loads it
+                var jq = window.jQuery;
+                var invalid = window.nw ? !window.nw.validate(this.form) : !!(jq && jq(this.form).data('validator') && !jq(this.form).valid());
+                if (invalid) {
                     this.errors = Object.assign({}, this.errors, { order: [this.texts.fixErrors] });
                     this.scrollToFirstError();
                     return;
