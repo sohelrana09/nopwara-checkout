@@ -1,9 +1,16 @@
 @model ShoppingCartModel
 @inject NopwaraCheckoutSettings checkoutSettings
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+@inject Nop.Web.Framework.Themes.IThemeContext themeContext
 @*
-    Discount + gift card boxes: the core partials (their submit buttons - apply/remove - are turned into
-    ajax calls by the page's submit handler; core's Enter-key scripts keep working).
+    Discount + gift card boxes: the core partials, or the theme's versions (their submit buttons - apply/remove - are
+    turned into ajax calls by the page's submit handler; the Enter-key handling of the partials keeps working).
+    _GiftCardBox lives under ShoppingCart, which this controller's view locations don't search: theme copy first, then core.
 *@
+@{
+    var themeGiftCardBox = $"~/Themes/{await themeContext.GetWorkingThemeNameAsync()}/Views/ShoppingCart/_GiftCardBox.cshtml";
+    var giftCardBox = viewEngine.GetView(null, themeGiftCardBox, isMainPage: false).Success ? themeGiftCardBox : "~/Views/ShoppingCart/_GiftCardBox.cshtml";
+}
 <div class="cart-collaterals space-y-3">
     @if (checkoutSettings.ShowDiscountBox)
     {
@@ -11,6 +18,6 @@
     }
     @if (checkoutSettings.ShowGiftCardBox)
     {
-        @await Html.PartialAsync("~/Views/ShoppingCart/_GiftCardBox.cshtml", Model.GiftCardBox)
+        @await Html.PartialAsync(giftCardBox, Model.GiftCardBox)
     }
 </div>
