@@ -1,7 +1,7 @@
 /*
  * Nopwara single-page checkout: stylesheet for themes that don't style the checkout views themselves
  * (setting "Themes with built-in styles"; Nopwara builds these views into its own Tailwind CSS).
- * Build output: ../Content/css/nopwara-checkout.css (npm install && npm run build:css)
+ * Build output: ../Content/css/nopwara-checkout.min.css (npm install && npm run build:css)
  *
  * It must not change anything outside the checkout page and must win over the host theme's CSS there:
  *  - no preflight (Tailwind's global reset); a small reset scoped to #nopwara-checkout instead

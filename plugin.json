@@ -2,7 +2,7 @@
   "Group": "Misc",
   "FriendlyName": "Nopwara single-page checkout",
   "SystemName": "Misc.NopwaraCheckout",
-  "Version": "1.10",
+  "Version": "1.11",
   "SupportedVersions": [ "5.00" ],
   "Author": "Nopwara",
   "DisplayOrder": 1,

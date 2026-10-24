@@ -30,7 +30,7 @@ A true single-page checkout for nopCommerce: addresses, delivery, shipping, orde
 - **Checkout button in the mini cart.** Core hides it when the store has checkout attributes or terms of service on the cart page. With the single-page checkout (and "Show checkout attributes" on) it is shown, except below the minimum order subtotal or for customers who can't check out. Nopwara links it straight to `/checkout/onepage/`, guests included.
 - **Any theme:**
   - *Nopwara* styles the views in its own Tailwind build and loads Alpine.js.
-  - *Other themes* get `Content/css/nopwara-checkout.css` and `Content/js/alpine.min.js` on the checkout page only. The stylesheet has no global reset: its reset and component rules are scoped to `#nopwara-checkout` and its utilities are `!important`, so it wins over the host theme on the checkout page and changes nothing elsewhere.
+  - *Other themes* get `Content/css/nopwara-checkout.min.css` and `Content/js/alpine.min.js` on the checkout page only. The stylesheet has no global reset: its reset and component rules are scoped to `#nopwara-checkout` and its utilities are `!important`, so it wins over the host theme on the checkout page and changes nothing elsewhere.
   - Themes can override any view at `Themes/{theme}/Views/Plugins/NopwaraCheckout/{view}.cshtml`.
 - **Core compatible:**
   - all state lives where core keeps it (customer addresses and `NopCustomerDefaults` generic attributes), so core order placement validates it as usual;
@@ -68,7 +68,7 @@ Upgrading from 1.00: the plugin's update step adds the new text strings and acti
 
 ## Plugin stylesheet
 
-`Content/css/nopwara-checkout.css` is prebuilt. To rebuild it after changing the views:
+`Content/css/nopwara-checkout.min.css` is prebuilt. To rebuild it after changing the views:
 
 ```bash
 cd tailwind
