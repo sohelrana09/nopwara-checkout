@@ -48,17 +48,9 @@ else
                                 }
                             </span>
                         </label>
-                        @if (shippingMethod.DesiredDeliveryDate?.Enabled ?? false)
-                        {
-                            <input type="hidden" name="ShippingMethods[@(i)].DesiredDeliveryDate.SelectedDate" id="deliverydate_@(i)" value="@shippingMethod.DesiredDeliveryDate?.SelectedDate" />
-                        }
                     </li>
                 }
             </ul>
-            if (methods.ShippingMethods.Any(m => m.DesiredDeliveryDate?.Enabled ?? false))
-            {
-                @await Html.PartialAsync("_DesiredDeliveryDate", methods.ShippingMethods)
-            }
             if (methods.NotifyCustomerAboutShippingFromMultipleLocations)
             {
                 <p class="multiple-locations mt-3 text-xs text-slate-500">@T("Checkout.ShippingMethod.ShippingFromMultipleLocations")</p>

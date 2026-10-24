@@ -3,7 +3,7 @@
   "FriendlyName": "Nopwara single-page checkout",
   "SystemName": "Misc.NopwaraCheckout",
   "Version": "1.10",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "4.90" ],
   "Author": "Nopwara",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Misc.NopwaraCheckout.dll",

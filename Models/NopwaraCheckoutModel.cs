@@ -77,13 +77,6 @@ public record NopwaraLoginModel : BaseNopModel
     public bool UsernamesEnabled { get; set; }
 
     public bool DisplayCaptcha { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether login by phone is enabled (offered as a link to the core login page)
-    /// </summary>
-    public bool LoginByPhoneEnabled { get; set; }
-
-    public string LoginPageUrl { get; set; }
 }
 
 /// <summary>

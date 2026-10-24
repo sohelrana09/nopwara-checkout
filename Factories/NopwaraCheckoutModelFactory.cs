@@ -58,7 +58,6 @@ public class NopwaraCheckoutModelFactory
     private readonly IWorkContext _workContext;
     private readonly NopwaraCheckoutService _checkoutService;
     private readonly NopwaraCheckoutSettings _settings;
-    private readonly OtpSettings _otpSettings;
     private readonly PaymentSettings _paymentSettings;
     private readonly ShippingSettings _shippingSettings;
 
@@ -91,7 +90,6 @@ public class NopwaraCheckoutModelFactory
         IWorkContext workContext,
         NopwaraCheckoutService checkoutService,
         NopwaraCheckoutSettings settings,
-        OtpSettings otpSettings,
         PaymentSettings paymentSettings,
         ShippingSettings shippingSettings)
     {
@@ -120,7 +118,6 @@ public class NopwaraCheckoutModelFactory
         _workContext = workContext;
         _checkoutService = checkoutService;
         _settings = settings;
-        _otpSettings = otpSettings;
         _paymentSettings = paymentSettings;
         _shippingSettings = shippingSettings;
     }
@@ -154,10 +151,7 @@ public class NopwaraCheckoutModelFactory
             model.Login = new NopwaraLoginModel
             {
                 UsernamesEnabled = _customerSettings.UsernamesEnabled,
-                DisplayCaptcha = _captchaSettings.Enabled && _captchaSettings.ShowOnLoginPage,
-                LoginByPhoneEnabled = _otpSettings.LoginByPhoneEnabled,
-                LoginPageUrl = _nopUrlHelper.RouteUrl(NopRouteNames.General.LOGIN,
-                    new { returnUrl = _nopUrlHelper.RouteUrl(NopwaraCheckoutDefaults.CHECKOUT_ROUTE_NAME) })
+                DisplayCaptcha = _captchaSettings.Enabled && _captchaSettings.ShowOnLoginPage
             };
         }
 

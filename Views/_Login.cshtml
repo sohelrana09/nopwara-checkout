@@ -45,10 +45,6 @@
                 @T("Account.Login.Fields.RememberMe")
             </label>
             <span class="flex flex-wrap items-center gap-x-4 gap-y-1">
-                @if (Model.LoginByPhoneEnabled)
-                {
-                    <a href="@Model.LoginPageUrl" class="font-medium">@T("Plugins.Misc.NopwaraCheckout.Login.ByPhone")</a>
-                }
                 <a href="@Url.RouteUrl(NopRouteNames.Standard.PASSWORD_RECOVERY)" class="font-medium">@T("Account.Login.ForgotPassword")</a>
             </span>
         </div>

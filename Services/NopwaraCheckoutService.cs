@@ -21,7 +21,7 @@ using Nop.Services.Payments;
 using Nop.Services.Shipping;
 using Nop.Services.Stores;
 using Nop.Services.Tax;
-using Nop.Services.Themes;
+using Nop.Web.Framework.Themes;
 using Nop.Web.Models.Checkout;
 using Nop.Web.Models.Common;
 
@@ -565,15 +565,6 @@ public class NopwaraCheckoutService
         var option = options.Find(o => !string.IsNullOrEmpty(o.Name) && o.Name.Equals(selectedName, StringComparison.InvariantCultureIgnoreCase));
         if (option == null)
             return await _localizationService.GetResourceAsync("ShippingMethod.SpecifyMethodError");
-
-        //desired delivery date (same form key as core)
-        if (_shippingSettings.AllowCustomerToChooseDeliveryDate)
-        {
-            var index = options.IndexOf(option);
-            var value = form[$"ShippingMethods[{index}].DesiredDeliveryDate.SelectedDate"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(value) && DateTime.TryParse(value, out var desiredDeliveryDate))
-                await _genericAttributeService.SaveAttributeAsync<DateTime?>(customer, NopCustomerDefaults.DesiredDeliveryDate, desiredDeliveryDate, store.Id);
-        }
 
         await _genericAttributeService.SaveAttributeAsync(customer, NopCustomerDefaults.SelectedShippingOptionAttribute, option, store.Id);
         return null;

@@ -91,7 +91,6 @@ public class NopwaraCheckoutPlugin : BasePlugin, IMiscPlugin, IWidgetPlugin
             ["Plugins.Misc.NopwaraCheckout.Login.Intro"] = "Log in to use your saved addresses. Your cart is kept.",
             ["Plugins.Misc.NopwaraCheckout.Login.Submit"] = "Log in and continue",
             ["Plugins.Misc.NopwaraCheckout.Login.Required"] = "Please enter your login details.",
-            ["Plugins.Misc.NopwaraCheckout.Login.ByPhone"] = "Log in with your phone number",
             ["Plugins.Misc.NopwaraCheckout.Delivery"] = "Delivery",
             ["Plugins.Misc.NopwaraCheckout.Delivery.Ship"] = "Ship to an address",
             ["Plugins.Misc.NopwaraCheckout.Delivery.Pickup"] = "Pick up in store",
